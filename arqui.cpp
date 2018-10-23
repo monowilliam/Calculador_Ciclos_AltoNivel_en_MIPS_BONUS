@@ -155,7 +155,7 @@ void contadorDeCiclosPipe(int i){
 		cout<<contadorPipe<<"+"<<indice<<"(2) = ";
 		contadorPipe= contadorPipe+(indice*2);
 	}	
-	
+	//Calcular ciclos de lw con o sin dependencias
 }
 
 void imprimirCiclosYMatrizPipelined(){
