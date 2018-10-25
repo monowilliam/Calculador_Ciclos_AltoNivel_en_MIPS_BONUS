@@ -12,10 +12,13 @@ int contadorPipe=4;
 
 vector<string>nombreRegistro;
 vector<int>valorRegistro;
-int banderaCiclo=0;
+int banderaCiclo1=0;
+int banderaCiclo2=0;
 int posBandera;
 int indice;
 
+
+//Funcion de Split donde identifica y separa las palabras entre espacios y elimina comas
 vector<string> split_iterator(const string& str){
 	vector<string> resultado;
 	string::const_iterator itBegin = str.begin();
@@ -36,6 +39,7 @@ vector<string> split_iterator(const string& str){
 }
 
 
+//Abre el archivo, quita comentarios y crea una matriz de vectores.
 void abrirArchivo(string codigo){
 	string linea;
 	ifstream a;
@@ -46,8 +50,10 @@ void abrirArchivo(string codigo){
 			if (split_iterator(linea)[i]!="")
 				fila.push_back(split_iterator(linea)[i]);	
 		}
-		for(int i=0; i<fila.size(); i++){ //falta terminar bien para eliminar comentarios
-			if(fila[i]=="#")
+		//elimina los comentarios de todo el codigo
+		for(int i=0; i<fila.size(); i++){ 
+			string a=fila[i];
+			if(a.find("#") != std::string::npos)
 				fila.erase(fila.begin()+i,fila.begin()+fila.size());
 		}
 		matriz.push_back(fila);	
@@ -85,8 +91,7 @@ void guardarRegistros(){
 }
 
 
-
-//Busca si existe comentarios o etiquetas en el codigo
+//Busca si existe etiquetas en el codigo
 bool etiquetaComentario(int a){
 	string palabra = matriz[a][0];
 	if (palabra.find(":") != std::string::npos)
@@ -94,14 +99,25 @@ bool etiquetaComentario(int a){
 	return false;
 }
 
-
-void banderaCiclos(){
-	if(banderaCiclo==0)
-		banderaCiclo=1;
+//Bandera para los ciclos principales
+void banderaCiclos1(){
+	if(banderaCiclo1==0)
+		banderaCiclo1=1;
 	else
-		banderaCiclo=0;
+		banderaCiclo1=0;
 }
 
+
+//Bandera para los ciclos anidados
+void banderaCiclos2(){
+	if(banderaCiclo2==0)
+		banderaCiclo2=1;
+	else
+		banderaCiclo2=0;
+}
+
+
+//Calcula el numero maximo entre dos valores
 int max(int num1, int num2) {
    int result;
    if (num1 > num2)
@@ -117,17 +133,23 @@ void contadorDeCiclosPipe(int i){
 	int operando2;
 	
 	//Calcula los ciclos que no estan fuera de un bucle y no tenga burbujas
-    if(matriz[i][0] != "lw" and matriz[i][0] != "j" and matriz[i][0] != "jal" and matriz[i][0] != "beq" and matriz[i][0] != "bne" and etiquetaComentario(i)!=true and banderaCiclo==0){
+    if(matriz[i][0] != "lw" and matriz[i][0] != "j" and matriz[i][0] != "jal" and matriz[i][0] != "beq" and matriz[i][0] != "bne" and etiquetaComentario(i)!=true and banderaCiclo1==0 and banderaCiclo2==0){
     	cout << contadorPipe<<" + 1 = ";
 		contadorPipe++;
 	}
 	//Cuando se encuentra una etiqueta se debe cambiar una bandera indicando un bucle y no sumar nada
 	else if(etiquetaComentario(i)==true){
-		banderaCiclos();
-		posBandera=i;
+		if (banderaCiclo1==0 and banderaCiclo2==0){
+			banderaCiclos1();
+			posBandera=i;
+		}
+		if (banderaCiclo1==1 and banderaCiclo2==0){
+			banderaCiclos2();
+		}
 	}
+	/*
 	//Calcula ciclos cuando se encuentra con branch
-	else if(banderaCiclo==1 and (matriz[i][0] == "beq" or matriz[i][0] == "bne")){
+	else if(banderaCiclo1==1 and (matriz[i][0] == "beq" or matriz[i][0] == "bne")){
 		if(matriz[i][0] == "beq"){
 			for (int j=0; j < matriz[i].size(); j++){
 				if(matriz[i][1]==nombreRegistro[j])
@@ -146,25 +168,27 @@ void contadorDeCiclosPipe(int i){
 		}
 	}
 	//Calcula los ciclos cuando estan dentro de un bucle y no tenga burbujas
-	else if(matriz[i][0] != "lw" and matriz[i][0] != "j" and matriz[i][0] != "jal" and matriz[i][0] != "beq" and matriz[i][0] != "bne" and etiquetaComentario(i)!=true and banderaCiclo==1){
+	else if(matriz[i][0] != "lw" and matriz[i][0] != "j" and matriz[i][0] != "jal" and matriz[i][0] != "beq" and matriz[i][0] != "bne" and etiquetaComentario(i)!=true and banderaCiclo1==1){
 		cout<<contadorPipe<<" + "<<indice<<" = ";
 		contadorPipe= contadorPipe+indice;
 	}
 	//Calcula los ciclos cuando se encuentra con Jump junto con sus burbujas.
-	else if(matriz[i][0] == "j" and banderaCiclo==1){
+	else if(matriz[i][0] == "j" and banderaCiclo1==1){
 		cout<<contadorPipe<<"+"<<indice<<"(2) = ";
 		contadorPipe= contadorPipe+(indice*2);
 	}	
 	//Calcular ciclos de lw con o sin dependencias fuera de un ciclo
-	else if(matriz[i][0]=="lw" and banderaCiclo==0){
+	else if(matriz[i][0]=="lw" and banderaCiclo1==0){
 		//terminar...
 	}
 	//Calcular ciclos de lw con o sin dependencias dentro de un ciclo
-	else if(matriz[i][0]=="lw" and banderaCiclo==1){
+	else if(matriz[i][0]=="lw" and banderaCiclo1==1){
 		//terminar...
-	}
+	}*/
 }
 
+
+//imprime los ciclos y la matriz
 void imprimirCiclosYMatrizPipelined(){
 	for (int i = 0; i<matriz.size(); i++) { 
 		contadorDeCiclosPipe(i); cout << contadorPipe <<"\t \t";
@@ -176,7 +200,7 @@ void imprimirCiclosYMatrizPipelined(){
 
 
 int main(void){
-	abrirArchivo("codigo.asm");
+	abrirArchivo("codigoProfe.asm");
 	guardarRegistros();
 	imprimirCiclosYMatrizPipelined();
 	return 0;
