@@ -12,13 +12,10 @@ int contadorPipe=4;
 
 vector<string>nombreRegistro; 	//vector donde guardo el nombre de los Registros
 vector<int>valorRegistro; 		//vector donde guarda los valores de los respectivos registros
-int banderaCiclo1=0; 			//bandera para el ciclo 1
-int banderaCiclo2=0; 			//bandera para el ciclo 2 anidado
-int posCiclo1; 					//posicion del ciclo 1
-int posCiclo2; 					//posicion del ciclo 2 anidado 
-int cuantasEtiquetasVan=0;		//contador de los ciclos que van
-int indice;
-
+vector <int>posicionesCiclos;	//vectoy que guarda las posiciones de cada ciclo
+int ciclos=0;					//contador de los ciclos que van
+int offset1;
+int offset2;
 
 //Funcion de Split donde identifica y separa las palabras entre espacios y elimina comas
 vector<string> split_iterator(const string& str){
@@ -116,28 +113,20 @@ bool compararEtiquetas(string a, string b){
 }
 
 
-//Bandera para los ciclos principales
-void banderaCiclos1(){
-	if(banderaCiclo1==0)
-		banderaCiclo1=1;
-	else
-		banderaCiclo1=0;
-}
-
-
-//Bandera para los ciclos anidados
-void banderaCiclos2(){
-	if(banderaCiclo2==0)
-		banderaCiclo2=1;
-	else
-		banderaCiclo2=0;
-}
-
-
 //Calcula el numero maximo entre dos valores
 int max(int num1, int num2) {
    int result;
    if (num1 > num2)
+      result = num1;
+   else
+      result = num2;
+   return result;
+}
+
+//Calcula el numero maximo entre dos valores
+int min(int num1, int num2) {
+   int result;
+   if (num1 < num2)
       result = num1;
    else
       result = num2;
@@ -149,29 +138,59 @@ void contadorDeCiclosPipe(int i){
 	int operando1;
 	int operando2;
 	
-	//Calcula los ciclos que no estan fuera de un bucle y no tenga burbujas
-    if(matriz[i][0] != "lw" and matriz[i][0] != "j" and matriz[i][0] != "jal" and matriz[i][0] != "beq" and matriz[i][0] != "bne" and etiquetaComentario(i)!=true and banderaCiclo1==0 and banderaCiclo2==0){
-    	//cout << contadorPipe<<" + 1 = ";
-		//contadorPipe++;
-	}
 	//Cuando se encuentra una etiqueta se debe cambiar una bandera indicando un bucle y no sumar nada
-	else if(etiquetaComentario(i)==true){
-		if (banderaCiclo1==0 and banderaCiclo2==0 ){
-			cuantasEtiquetasVan++;
-			banderaCiclos1();
-			posCiclo1=i;
+	if(etiquetaComentario(i)==true){
+		if (ciclos==0)
+			posicionesCiclos.push_back(i);
+		else if (ciclos==1)
+			posicionesCiclos.push_back(i);
+	}
+	
+	//Calcula los ciclos que estan fuera de un bucle y no tenga burbujas
+    else if(matriz[i][0] != "lw" and matriz[i][0] != "j" and matriz[i][0] != "jr"and matriz[i][0] != "jal" and matriz[i][0] != "beq" and matriz[i][0] != "bne" and etiquetaComentario(i)!=true and ciclos==0){
+    	cout << contadorPipe<<" + 1 = ";  contadorPipe++;
+	}
+	
+	//Calcula los ciclos cuando estan dentro de un bucle (primero) simple y no tenga burbujas
+	else if(matriz[i][0] != "lw" and matriz[i][0] != "j" and matriz[i][0] != "jal" and matriz[i][0] != "beq" and matriz[i][0] != "bne" and etiquetaComentario(i)!=true and ciclos==1){
+		cout<<contadorPipe<<" + "<< offset1 <<" = \t";
+		contadorPipe= contadorPipe+ offset1 ;
+	}
+	
+	//Calcula los ciclos cuando estan dentro de un bucle (segundo) anidado y no tenga burbujas
+	else if(matriz[i][0] != "lw" and matriz[i][0] != "j" and matriz[i][0] != "jal" and matriz[i][0] != "beq" and matriz[i][0] != "bne" and etiquetaComentario(i)!=true and ciclos==2){
+		cout<<contadorPipe<<" + "<< offset1 << "+" << offset2 <<" = \t \t";
+		contadorPipe= contadorPipe+ offset1 + offset2 ;
+	}
+	
+	//Calcula los ciclos cuando se encuentra con Jump junto con sus burbujas.
+	else if(matriz[i][0] == "j"){
+		//Encuentra el j donde salta el primer ciclo
+		if(ciclos==1 and compararEtiquetas(matriz[posicionesCiclos[0]][0],matriz[i][1]) == 1){
+			ciclos=0;
+			//aca hay que sumar lo que faltaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+			cout<<contadorPipe<<" + "<<offset1<<" x 2 = ";
+			contadorPipe= contadorPipe+(offset1*2);
 		}
-		else if (banderaCiclo1==1 and banderaCiclo2==0){
-			cuantasEtiquetasVan++;
-			banderaCiclos2();
-			posCiclo2=i;
+		//Encuentra el j donde salta el segundo ciclo anidado
+		else if(ciclos==2 and compararEtiquetas(matriz[posicionesCiclos[1]][0],matriz[i][1]) == 1 ){
+			ciclos=1;
+			cout<<contadorPipe<<" + "<<offset1 << "+" << offset2 <<" x 2 = \t";
+			contadorPipe= contadorPipe+offset1+(offset2*2);
 		}
 	}
 	
-	//Calcula ciclos cuando se encuentra con branch
-	else if(banderaCiclo1==1 and (matriz[i][0] == "beq" or matriz[i][0] == "bne")){
-		//Si se encuentra un solo ciclo...
-		if(matriz[i][0] == "beq" and banderaCiclo2==0){
+	//Calcula los ciclos cuando se encuetra con un JR
+	else if(matriz[i][0] == "jr" and ciclos==0){
+		cout<<contadorPipe<<" + 2 = ";
+		contadorPipe = contadorPipe + 2;
+	}
+		
+	//Calcula ciclos cuando se encuentra con branch CICLOS SMPLES Y ANIDADOS
+	else if(matriz[i][0] == "beq" or matriz[i][0] == "bne"){
+		ciclos++;
+		//Si se encuentra el primer ciclo...
+		if(matriz[i][0] == "beq" and ciclos==1){
 			for (int j=0; j < matriz[i].size(); j++){
 				if(matriz[i][1]==nombreRegistro[j])
 					operando1=valorRegistro[j];
@@ -179,14 +198,15 @@ void contadorDeCiclosPipe(int i){
 					operando2=valorRegistro[j];
 			}
 			//tratar de que en el vector se sobrescriban valores. Puede que se estalle aca, hay que cuadrar para que sea dividir operando1 con operando2
-			indice=max(operando1,operando2);
-			//cout << contadorPipe<<" + "<< indice<< "+2 = ";
-			//hay burbuja cuando se cumple la condicion +1, y +1 ahi mismo que pregunta y se cumple
-			//contadorPipe=contadorPipe+1+1+indice;
+			int maximo=max(operando1,operando2);
+			int minimo=min(operando1,operando2);
+			offset1=maximo-minimo;
+			cout << contadorPipe<<" + "<< offset1<< " + 2 = \t";
+			//hay burbuja cuando se cumple la condicion +1, y +1 ahi mismo que pregunta por ultima vez y se cumple
+			contadorPipe=contadorPipe+1+1+offset1;
 		}
-		//Si se encuentra con otro ciclo para formar el ciclo anidado...................................................
-		if(matriz[i][0] == "beq" and banderaCiclo2==2){
-			cuantasEtiquetasVan++;
+		//Si se encuentra con el segundo ciclo para formar el ciclo anidado...................................................
+		if(matriz[i][0] == "beq" and ciclos==2){
 			for (int j=0; j < matriz[i].size(); j++){
 				if(matriz[i][1]==nombreRegistro[j])
 					operando1=valorRegistro[j];
@@ -194,42 +214,18 @@ void contadorDeCiclosPipe(int i){
 					operando2=valorRegistro[j];
 			}
 			//tratar de que en el vector se sobrescriban valores. Puede que se estalle aca, hay que cuadrar para que sea dividir operando1 con operando2
-			indice=max(operando1,operando2);
-			//cout << contadorPipe<<" + "<< indice<< "+2 = ";
+			int maximo=max(operando1,operando2);
+			int minimo=min(operando1,operando2);
+			offset2=maximo-minimo;
+			cout << contadorPipe<<" + "<< offset1 << " + " << offset2 << " + 2 = \t";
 			//hay burbuja cuando se cumple la condicion +1, y +1 ahi mismo que pregunta y se cumple
-			//contadorPipe=contadorPipe+1+1+indice;
+			contadorPipe=contadorPipe+1+1+offset1+offset2;
 		}
 		if(matriz[i][0] == "bne"){
 			//terminar...
 		}
-	}
-	//Calcula los ciclos cuando estan dentro de un bucle simple y no tenga burbujas
-	else if(matriz[i][0] != "lw" and matriz[i][0] != "j" and matriz[i][0] != "jal" and matriz[i][0] != "beq" and matriz[i][0] != "bne" and etiquetaComentario(i)!=true and banderaCiclo1==1 and banderaCiclo2==0){
-		//cout<<contadorPipe<<" + "<<indice<<" = ";
-		//contadorPipe= contadorPipe+indice;
-	}
-	//Calcula los ciclos cuando se encuentra con Jump junto con sus burbujas.
-	else if(matriz[i][0] == "j" and banderaCiclo1==1){
-		if(banderaCiclo2==0 and compararEtiquetas(matriz[posCiclo2][0],matriz[i][1]) == 1 ){
-			//cout<<contadorPipe<<"+"<<indice<<"(2) = entraaa1 ";
-			//contadorPipe= contadorPipe+(indice*2);
-		}
-		//Encuentra el j donde salta el primer ciclo
-		else if(banderaCiclo2==1 and compararEtiquetas(matriz[posCiclo1][0],matriz[i][1]) == 1){
-			banderaCiclo2=0;
-			banderaCiclo1=0;
-			cuantasEtiquetasVan--;
-			//aca hay que sumar lo que faltaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-			//cout<<contadorPipe<<"+"<<indice<<"(2) = entraaa2  ";
-			//contadorPipe= contadorPipe+(indice*2);
-		}
-		else if(banderaCiclo2==1 and compararEtiquetas(matriz[posCiclo2][0],matriz[i][1]) == 1 ){
-			banderaCiclo2=0;
-			cuantasEtiquetasVan--;
-			//cout<<contadorPipe<<"+"<<indice<<"(2) = entraaa3 ";
-			//contadorPipe= contadorPipe+(indice*2);
-		}
-	}/*
+	}	
+	/*
 	//Calcular ciclos de lw con o sin dependencias fuera de un ciclo
 	else if(matriz[i][0]=="lw" and banderaCiclo1==0){
 		//terminar...
@@ -244,8 +240,7 @@ void contadorDeCiclosPipe(int i){
 //imprime los ciclos y la matriz
 void imprimirCiclosYMatrizPipelined(){
 	for (int i = 0; i<matriz.size(); i++) { 
-		contadorDeCiclosPipe(i); //cout << contadorPipe <<"\t \t \t \t";
-        cout << banderaCiclo1 << " " << banderaCiclo2 << " | "<<cuantasEtiquetasVan<< "\t";
+		contadorDeCiclosPipe(i); cout << contadorPipe <<"\t"; cout<<" | " << ciclos << " | ";
 		for (int j = 0; j<matriz[i].size(); j++) 
             cout << matriz[i][j] << " "; 
         cout << endl; 
