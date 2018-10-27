@@ -21,7 +21,7 @@ addi $t3, $0,40
             addi $s3, $s3,1
             j Colu
     incfila: 
-        addi $s2, $s2,1
-        j fila
-fin:
+        addi $s2, $s2,1 #1484 banano   
+        j fila  
+fin: # 1259 monociclo..
     jr $ra
