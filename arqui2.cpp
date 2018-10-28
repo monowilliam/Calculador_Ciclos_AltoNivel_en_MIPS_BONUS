@@ -4,10 +4,13 @@
 #include <fstream>
 #include <iterator>
 #include <stdlib.h>
+#include <sstream>
 using namespace std;
 
 vector<string> fila;
 vector<vector<string> > matriz;
+vector<vector<string> > ciclo1;
+
 int contadorPipe=4;
 int contadorMono=0;
 
@@ -17,6 +20,8 @@ vector <int>posicionesCiclos;	//vectoy que guarda las posiciones de cada ciclo
 int ciclos=0;					//contador de los ciclos que van
 int offset1;
 int offset2;
+int cuandoCiclosHay=0;
+string operando1Ciclo, operando2Ciclo;
 
 //Funcion de Split donde identifica y separa las palabras entre espacios y elimina comas
 vector<string> split_iterator(const string& str){
@@ -36,6 +41,14 @@ vector<string> split_iterator(const string& str){
 	if( itBegin != itEnd )
 		resultado.push_back(string(itBegin,itEnd));
 	return resultado;
+}
+
+namespace patch{
+    template < typename T > std::string to_string( const T& n ){
+        std::ostringstream stm ;
+        stm << n ;
+        return stm.str() ;
+    }
 }
 
 
@@ -141,10 +154,10 @@ void contadorDeCiclosPipe(int i){
 	
 	//Cuando se encuentra una etiqueta se debe cambiar una bandera indicando un bucle y no sumar nada
 	if(etiquetaComentario(i)==true){
-		if (ciclos==0)
-			posicionesCiclos.push_back(i);
-		else if (ciclos==1)
-			posicionesCiclos.push_back(i);
+		if (ciclos==0){
+			cout << " \t "; posicionesCiclos.push_back(i); }
+		else if (ciclos==1){
+			cout << " \t \t"; posicionesCiclos.push_back(i); }
 	}
 	
 	//Calcula los ciclos que estan fuera de un bucle y no tenga burbujas
@@ -227,20 +240,75 @@ void contadorDeCiclosPipe(int i){
 		}
 	}	
 	
-	//Calcular ciclos de lw con o sin dependencias fuera de un ciclo
-	else if(matriz[i][0]=="lw" and ciclos==0){
-		contadorPipe++;
-	}
-	//Calcular ciclos de lw con o sin dependencias dentro de un ciclo simple
-	else if(matriz[i][0]=="lw" and ciclos==1){
-		contadorPipe = contadorPipe + offset1;
-	}
-	//Calcular ciclos de lw con o sin dependencias dentro de un ciclo anidado
-	else if(matriz[i][0]=="lw" and ciclos==2){
-		contadorPipe = contadorPipe + (offset1*offset2);
+	//Calcula los ciclos de los lw
+	else if(matriz[i][0]=="lw"){
+		//Calcular ciclos de lw con o sin dependencias fuera de un ciclo
+		if(matriz[i][0]=="lw" and ciclos==0){
+			if(matriz[i+1].size()==4){
+				if(matriz[i][1]==matriz[i+1][2] or matriz[i][1]==matriz[i+1][3]){
+					cout << "(B) " <<contadorPipe << " + 2 = \t";
+					contadorPipe = contadorPipe + 1+1;
+				}else{
+					cout <<contadorPipe << " + 1 = \t";
+					contadorPipe++;
+				}
+			}
+			if(matriz[i+1].size()==3){
+				if(matriz[i][1]==matriz[i+1][1] or matriz[i][1]==matriz[i+1][2]){
+					cout << "(B) " <<contadorPipe << " + 2 = \t";
+					contadorPipe = contadorPipe + 1+1;
+				}else{
+					cout <<contadorPipe << " + 1 = \t";
+					contadorPipe++;
+				}
+			}
+		}
+		//Calcular ciclos de lw con o sin dependencias dentro de un ciclo simple
+		else if(matriz[i][0]=="lw" and ciclos==1){
+			if(matriz[i+1].size()==4){
+				if(matriz[i][1]==matriz[i+1][2] or matriz[i][1]==matriz[i+1][3]){
+					cout << "(B) " <<contadorPipe << " + " << offset1 << "x2 = \t";
+					contadorPipe = contadorPipe + (offset1*2);
+				}else{
+					cout <<contadorPipe << " + " << offset1 << " = \t";
+					contadorPipe = contadorPipe + offset1;
+				}
+			}
+			if(matriz[i+1].size()==3){
+				if(matriz[i][1]==matriz[i+1][1] or matriz[i][1]==matriz[i+1][2]){
+					cout << "(B) " <<contadorPipe << " + " << offset1 << "x2 = \t";
+					contadorPipe = contadorPipe + (offset1*2);
+				}else{
+					cout <<contadorPipe << " + " << offset1 << " = \t";
+					contadorPipe = contadorPipe + offset1;
+				}
+			}
+		}
+		//Calcular ciclos de lw con o sin dependencias dentro de un ciclo anidado
+		else if(matriz[i][0]=="lw" and ciclos==2){
+			if(matriz[i+1].size()==4){
+				//Busca las dependencias de lw
+				if(matriz[i][1]==matriz[i+1][2] or matriz[i][1]==matriz[i+1][3]){
+					cout << "(B) " <<contadorPipe << " + " << offset1 << "x" <<offset2 << "x2 = \t";
+					contadorPipe = contadorPipe + (offset1*offset2*2);
+				}else{
+					cout <<contadorPipe << " + " << offset1 << "x" <<offset2 << " = \t";
+					contadorPipe = contadorPipe + (offset1*offset2);
+				}
+			}
+			if(matriz[i+1].size()==3){
+				//Busca las dependencias de lw
+				if(matriz[i][1]==matriz[i+1][1] or matriz[i][1]==matriz[i+1][2]){
+					cout << "(B) " <<contadorPipe << " + " << offset1 << "x" <<offset2 << "x2 = \t";
+					contadorPipe = contadorPipe + (offset1*offset2*2);
+				}else{
+					cout <<contadorPipe << " + " << offset1 << "x" <<offset2 << " = \t";
+					contadorPipe = contadorPipe + (offset1*offset2);
+				}
+			}
+		}
 	}
 }
-
 
 
 void contadorDeMonociclos(int i){
@@ -255,32 +323,32 @@ void contadorDeMonociclos(int i){
 	}
 	//Calcula los ciclos que estan fuera de un bucle y no tenga burbujas
     else if(matriz[i][0] != "lw" and matriz[i][0] != "j" and matriz[i][0] != "jr"and matriz[i][0] != "jal" and matriz[i][0] != "beq" and matriz[i][0] != "bne" and etiquetaComentario(i)!=true and ciclos==0){
-    	contadorPipe++;
+    	contadorMono++;
 	}
 	//Calcula los ciclos cuando estan dentro de un bucle (primero) simple y no tenga burbujas
 	else if(matriz[i][0] != "lw" and matriz[i][0] != "j" and matriz[i][0] != "jal" and matriz[i][0] != "beq" and matriz[i][0] != "bne" and etiquetaComentario(i)!=true and ciclos==1){
-		contadorPipe = contadorPipe + offset1;
+		contadorMono = contadorMono + offset1;
 	}
 	//Calcula los ciclos cuando estan dentro de un bucle (segundo) anidado y no tenga burbujas
 	else if(matriz[i][0] != "lw" and matriz[i][0] != "j" and matriz[i][0] != "jal" and matriz[i][0] != "beq" and matriz[i][0] != "bne" and etiquetaComentario(i)!=true and ciclos==2){
-		contadorPipe= contadorPipe + (offset1 * offset2);
+		contadorMono= contadorMono + (offset1 * offset2);
 	}
 	//Calcula los ciclos cuando se encuentra con Jump junto con sus burbujas.
 	else if(matriz[i][0] == "j"){
 		//Encuentra el j donde salta el primer ciclo
 		if(ciclos==1 and compararEtiquetas(matriz[posicionesCiclos[0]][0],matriz[i][1]) == 1){
 			ciclos=0;
-			contadorPipe = contadorPipe + offset1;
+			contadorMono = contadorMono + offset1;
 		}
 		//Encuentra el j donde salta el segundo ciclo anidado
 		else if(ciclos==2 and compararEtiquetas(matriz[posicionesCiclos[1]][0],matriz[i][1]) == 1 ){
 			ciclos=1;
-			contadorPipe = contadorPipe + (offset1*offset2);
+			contadorMono = contadorMono + (offset1*offset2);
 		}
 	}
 	//Calcula los ciclos cuando se encuetra con un JR
 	else if(matriz[i][0] == "jr" and ciclos==0){
-		contadorPipe++;
+		contadorMono++;
 	}	
 	//Calcula ciclos cuando se encuentra con branch CICLOS SMPLES Y ANIDADOS
 	else if(matriz[i][0] == "beq" or matriz[i][0] == "bne"){
@@ -297,7 +365,7 @@ void contadorDeMonociclos(int i){
 			int maximo=max(operando1,operando2);
 			int minimo=min(operando1,operando2);
 			offset1=maximo-minimo;
-			contadorPipe=contadorPipe+1+offset1;
+			contadorMono=contadorMono+1+offset1;
 		}
 		//Si se encuentra con el segundo ciclo para formar el ciclo anidado...................................................
 		if(matriz[i][0] == "beq" and ciclos==2){
@@ -311,7 +379,7 @@ void contadorDeMonociclos(int i){
 			int maximo=max(operando1,operando2);
 			int minimo=min(operando1,operando2);
 			offset2=maximo-minimo;
-			contadorPipe=contadorPipe+1+(offset1*offset2);
+			contadorMono=contadorMono+1+(offset1*offset2);
 		}
 		if(matriz[i][0] == "bne"){
 			//terminar...
@@ -319,20 +387,98 @@ void contadorDeMonociclos(int i){
 	}	
 	//Calcular ciclos de lw con o sin dependencias fuera de un ciclo
 	else if(matriz[i][0]=="lw" and ciclos==0){
-		contadorPipe++;
+		contadorMono++;
 	}
 	//Calcular ciclos de lw con o sin dependencias dentro de un ciclo simple
 	else if(matriz[i][0]=="lw" and ciclos==1){
-		contadorPipe = contadorPipe + offset1;
+		contadorMono = contadorMono + offset1;
 	}
 	//Calcular ciclos de lw con o sin dependencias dentro de un ciclo anidado
 	else if(matriz[i][0]=="lw" and ciclos==2){
-		contadorPipe = contadorPipe + (offset1*offset2);
+		contadorMono = contadorMono + (offset1*offset2);
 	}
 }
 
 
-//imprime los ciclos y la matriz
+void crearMatriz2(int i, int numDesenrrollado){
+	if(ciclos==1 and cuandoCiclosHay==1){
+		fila.push_back(patch::to_string(ciclos));	
+		//Busca el registro que esta de contador tomando los dos operandos el branch
+		if(matriz[i][0]== "beq" or matriz[i][0]== "bne"){
+			operando1Ciclo= matriz[i][1];
+			operando2Ciclo= matriz[i][2];
+		}
+		//Mete los valores la matriz fila
+		for (int j = 0; j<matriz[i].size(); j++)
+			fila.push_back(matriz[i][j]);
+		//Cambia el valor del contador por la multiplicacion del desenrrollado
+		if( (fila[2]==operando1Ciclo and fila[3]==operando1Ciclo) or (fila[2]==operando2Ciclo and fila[3]==operando2Ciclo) ){
+			string a=fila[4];
+			int b = atoi(a.c_str());
+			int c = b*numDesenrrollado;
+			fila[4]= patch::to_string(c);
+		}
+		ciclo1.push_back(fila);
+		fila.clear();
+	}
+	if(ciclos==2 and cuandoCiclosHay==2){
+		fila.push_back(patch::to_string(ciclos));	
+		//Busca el registro que esta de contador tomando los dos operandos el branch
+		if(matriz[i][0]== "beq" or matriz[i][0]== "bne"){
+			operando1Ciclo= matriz[i][1];
+			operando2Ciclo= matriz[i][2];
+		}
+		//Mete los valores la matriz fila
+		for (int j = 0; j<matriz[i].size(); j++)
+			fila.push_back(matriz[i][j]);
+		//Cambia el valor del contador por la multiplicacion del desenrrollado
+		if( (fila[2]==operando1Ciclo and fila[3]==operando1Ciclo) or (fila[2]==operando2Ciclo and fila[3]==operando2Ciclo) ){
+			string a=fila[4];
+			int b = atoi(a.c_str());
+			int c = b*numDesenrrollado;
+			fila[4]= patch::to_string(c);
+		}
+		ciclo1.push_back(fila);
+		fila.clear();
+	}
+}
+
+
+void desenrrollado(int i, int numDesenrrollado){
+	//Cuando se encuentra una etiqueta se debe cambiar una bandera indicando un bucle y no sumar nada
+	if(etiquetaComentario(i)==true){
+		if (ciclos==0)
+			posicionesCiclos.push_back(i);
+		else if (ciclos==1)
+			posicionesCiclos.push_back(i);
+	}
+	//Calcula los ciclos cuando se encuentra con Jump junto con sus burbujas.
+	else if(matriz[i][0] == "j"){
+		//Encuentra el j donde salta el primer ciclo
+		if(ciclos==1 and compararEtiquetas(matriz[posicionesCiclos[0]][0],matriz[i][1]) == 1)
+			ciclos=0;
+		//Encuentra el j donde salta el segundo ciclo anidado
+		else if(ciclos==2 and compararEtiquetas(matriz[posicionesCiclos[1]][0],matriz[i][1]) == 1 )
+			ciclos=1;
+	}
+	//Calcula ciclos cuando se encuentra con branch CICLOS SMPLES Y ANIDADOS
+	else if(matriz[i][0] == "beq" or matriz[i][0] == "bne")
+		ciclos++;
+	crearMatriz2(i,numDesenrrollado);
+}
+
+void calculadorDeCiclos(){
+	for (int i = 0; i<matriz.size(); i++) { 
+		for (int j = 0; j<matriz[i].size(); j++){
+			if(matriz[i][j] == "beq" or matriz[i][j] == "bne")
+				cuandoCiclosHay++;
+		}
+	}
+}
+
+
+
+//imprime los ciclos y la matriz en pipelined
 void imprimirCiclosYMatrizPipelined(){
 	for (int i = 0; i<matriz.size(); i++) { 
 		contadorDeCiclosPipe(i); cout << contadorPipe <<"\t"; cout<<" | " << ciclos << " | " ;
@@ -343,9 +489,52 @@ void imprimirCiclosYMatrizPipelined(){
 }
 
 
+
+//imprime los ciclos y la matriz en monociclo
+void imprimirCiclosYMatrizMonociclo(){
+	for (int i = 0; i<matriz.size(); i++) { 
+		contadorDeMonociclos(i); cout << contadorMono <<"\t"; cout<<" | " << ciclos << " | " ;
+		for (int j = 0; j<matriz[i].size(); j++) 
+            cout << matriz[i][j] << " "; 
+        cout << endl; 
+    }
+}
+
+
+void imprimirDesenrrollado(int numDesenrrollado){
+	//crea la matriz del ciclo a desenrrollar
+	for (int i = 0; i<matriz.size(); i++)
+		desenrrollado(i,numDesenrrollado);
+	//imprime el primer ciclo desenrrollado
+	for (int i = 0; i<ciclo1.size()-1; i++) { 
+		for (int j = 1; j<ciclo1[i].size(); j++)
+				cout << ciclo1[i][j] << " ";
+        cout << endl; 
+	}cout << endl;
+	//imprime los ciclos de la mitad
+	for(int k=0; k<numDesenrrollado-2; k++){
+		for (int i = 1; i<ciclo1.size()-1; i++) { 
+			for (int j = 1; j<ciclo1[i].size(); j++)
+					cout << ciclo1[i][j] << " ";
+	        cout << endl; 
+	    }
+		cout << endl;
+	}
+	//imprime el ultimo ciclo desenrrollado
+	for (int i = 1; i<ciclo1.size(); i++) { 
+		for (int j = 1; j<ciclo1[i].size(); j++)
+				cout << ciclo1[i][j] << " ";
+        cout << endl; 
+	}cout << endl;
+}
+
+
 int main(void){
 	abrirArchivo("codigoProfe.asm");
+	calculadorDeCiclos();
 	guardarRegistros();
-	imprimirCiclosYMatrizPipelined();
+	//imprimirCiclosYMatrizMonociclo();
+	imprimirDesenrrollado(3);
 	return 0;
+
 }
