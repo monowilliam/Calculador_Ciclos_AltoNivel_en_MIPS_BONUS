@@ -6,6 +6,12 @@
 #include <stdlib.h>
 #include <sstream>
 using namespace std;
+#ifdef _WIN32
+#define  limpiar  system("cls")
+#endif
+#ifdef linux
+#define  limpiar   system("clear");
+#endif
 
 vector<string> fila;
 vector<vector<string> > matriz;
@@ -231,9 +237,9 @@ void contadorDeCiclosPipe(int i){
 			int maximo=max(operando1,operando2);
 			int minimo=min(operando1,operando2);
 			offset2=maximo-minimo;
-			cout << contadorPipe<<" + "<< offset1 << "x" << offset2 << " + 2 = \t";
+			cout << contadorPipe<<" + "<< offset1 << "+2 x" << offset2 << " = \t";
 			//hay burbuja cuando se cumple la condicion +1, y +1 ahi mismo que pregunta y se cumple
-			contadorPipe=contadorPipe+2+(offset1*offset2);
+			contadorPipe=contadorPipe+((offset1+2)*offset2);
 		}
 		if(matriz[i][0] == "bne"){
 			//terminar...
@@ -507,6 +513,7 @@ void imprimirDesenrrollado(int numDesenrrollado){
 		desenrrollado(i,numDesenrrollado);
 	//imprime el primer ciclo desenrrollado
 	for (int i = 0; i<ciclo1.size()-1; i++) { 
+		cout <<"\t";
 		for (int j = 1; j<ciclo1[i].size(); j++)
 				cout << ciclo1[i][j] << " ";
         cout << endl; 
@@ -514,6 +521,7 @@ void imprimirDesenrrollado(int numDesenrrollado){
 	//imprime los ciclos de la mitad
 	for(int k=0; k<numDesenrrollado-2; k++){
 		for (int i = 1; i<ciclo1.size()-1; i++) { 
+			cout <<"\t";
 			for (int j = 1; j<ciclo1[i].size(); j++)
 					cout << ciclo1[i][j] << " ";
 	        cout << endl; 
@@ -522,6 +530,7 @@ void imprimirDesenrrollado(int numDesenrrollado){
 	}
 	//imprime el ultimo ciclo desenrrollado
 	for (int i = 1; i<ciclo1.size(); i++) { 
+		cout <<"\t";
 		for (int j = 1; j<ciclo1[i].size(); j++)
 				cout << ciclo1[i][j] << " ";
         cout << endl; 
@@ -529,12 +538,96 @@ void imprimirDesenrrollado(int numDesenrrollado){
 }
 
 
-int main(void){
-	abrirArchivo("codigoProfe.asm");
-	calculadorDeCiclos();
-	guardarRegistros();
-	//imprimirCiclosYMatrizMonociclo();
-	imprimirDesenrrollado(3);
-	return 0;
+string obtenerString(){
+	string a;
+	cin>>a;								//Funcion para no usar cin
+	return a;
+}
 
+void textoMenu(){
+	cout<<endl ;
+	cout<<"   ษอออออออออออออออออออออออออออออออออออออออออออออออออออป"<<endl;
+	cout<<"   บ     Calculador de Ciclos Pipelined, Monociclos    บ "<<endl ;
+	cout<<"   บ  y Desenrrollado en MIPS - William Aguirre Zapata บ "<<endl ;
+	cout<<"   ศอออออออออออออออออออออออออออออออออออออออออออออออออออผ "<<endl<<endl;
+	cout<<"	 NOTAS Y CRITERIOS DE DISEัO DEL CODIGO MIPS "<<endl;
+	cout<<" El codigo en MIPS no puede contener espacios en las entrelineas, ni una linea"<<endl;
+	cout<<" solamente con comentarios '#...'; el opcode de las instrucciones debe ser en"<<endl;
+	cout<<" minuscula 'addi $s1, $s1, 1' y los registros separados por ',' comas"<<endl;
+	cout<<" o espacios ' '; las etiquetas 'label:' deben ir en un entrelineado sin mas porcion"<<endl;
+	cout<<" de codigo; el numero a desenrrollar debe ser multiplo de dos. El maximo numero de"<<endl;
+	cout<<" ciclos anidados permitidos son dos."<<endl<<endl;
+	cout<<" 1 - Calculador de ciclos de PIPELINED en MIPS"<<endl <<endl;
+	cout<<" 2 - Calculador de ciclos de MONOCICLO en MIPS" <<endl<<endl;
+	cout<<" 3 - DESENRROLLADO de codigo en MIPS" <<endl<<endl;
+	cout<<" 0 - Salir"<<endl<<endl;
+	cout << "Ingrese la opcion que desea realizar ";
+}
+
+void menu(){
+	limpiar;
+	//string nombreproy;
+	int numeroDesenrrollado;
+	string version;
+		do{
+			matriz.clear();
+			ciclo1.clear();
+			contadorPipe=4;
+			contadorMono=0;
+			nombreRegistro.clear(); 	//vector donde guardo el nombre de los Registros
+			valorRegistro.clear();		//vector donde guarda los valores de los respectivos registros
+			posicionesCiclos.clear();	//vectoy que guarda las posiciones de cada ciclo
+			ciclos=0;					//contador de los ciclos que van
+			offset1=0;
+			offset2=0;
+			cuandoCiclosHay=0;
+			operando1Ciclo="";
+			operando2Ciclo="";
+			abrirArchivo("codigoProfe.asm");
+			calculadorDeCiclos();
+			guardarRegistros();
+			
+			limpiar;
+			textoMenu();
+			string pl;
+			pl=obtenerString();
+			if( pl == "1"){
+				limpiar;
+				imprimirCiclosYMatrizPipelined();
+				cout << endl; 
+				system("pause");
+			}
+			else if( pl == "2"){
+				limpiar;
+				imprimirCiclosYMatrizMonociclo();
+				cout << endl; 
+				system("pause");
+			}
+			else if( pl == "3"){
+				limpiar;
+				cout <<endl <<" Digite el numero total de desenrrollamientos multiplo de 2: ";
+				cin >> numeroDesenrrollado; cout << endl;
+				imprimirDesenrrollado(numeroDesenrrollado);
+				cout << endl; 
+				system("pause");
+			}
+			else if( pl == "0"){
+				limpiar; cout << endl;
+				cout <<"Hasta pronto!"<< endl;
+				system("pause");
+				exit(1);
+			}
+			else{
+				cout << endl;
+				cout << "Opcion invalida, intenta nuevamente"<< endl<<endl;
+				system("pause");
+				limpiar;
+			}
+		}while(1);
+}
+
+
+int main(void){
+	menu();
+	return 0;
 }
